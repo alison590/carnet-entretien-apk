@@ -1,0 +1,8 @@
+{
+  "appId": "com.carnet.entretien.kia",
+  "appName": "Carnet Entretien",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
