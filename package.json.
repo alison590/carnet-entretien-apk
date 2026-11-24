@@ -1,0 +1,16 @@
+{
+  "name": "carnet-entretien-kia",
+  "version": "1.0.0",
+  "description": "Application de suivi d'entretien automobile en WebView / Capacitor",
+  "scripts": {
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/android": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  }
+}
