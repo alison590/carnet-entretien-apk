@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1280, initial-scale=1.0" />
+  <title>Carnet d'Entretien — Kia Cee'd SW CRDi</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <div class="app-wrapper">
+    <header class="topbar">
+      <div class="brand">
+        <div class="car-badge">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+            <circle cx="7" cy="17" r="2"/>
+            <path d="M9 17h6"/>
+            <circle cx="17" cy="17" r="2"/>
+          </svg>
+        </div>
+        <div>
+          <h1>CARNET D'ENTRETIEN</h1>
+          <span class="subtitle">Kia Cee'd CRDi Break • Suivi Numérique</span>
+        </div>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat-pill">
+          <span class="stat-label">Dernier Kilométrage</span>
+          <span class="stat-value" id="stat-km">— km</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">Interventions</span>
+          <span class="stat-value" id="stat-count">0</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">Dernier Entretien</span>
+          <span class="stat-value" id="stat-last-date">—</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-export-json" class="btn btn-secondary" title="Sauvegarder une copie JSON">
+          💾 Sauvegarde
+        </button>
+        <button id="btn-export-pdf" class="btn btn-primary">
+          📄 Exporter PDF
+        </button>
+      </div>
+    </header>
+
+    <main class="main-grid">
+      <section class="card form-section">
+        <div class="card-header">
+          <h2>➕ Nouvel Entretien</h2>
+          <span class="badge-auto">Enregistrement local</span>
+        </div>
+
+        <form id="maintenance-form" autocomplete="off">
+          <div class="form-group">
+            <label for="service-name">Nom de l'entretien *</label>
+            <input
+              type="text"
+              id="service-name"
+              placeholder="Ex: Vidange huile + filtre, Plaquettes avant..."
+              list="preset-services"
+              required
+            />
+            <datalist id="preset-services">
+              <option value="Vidange moteur + Filtre à huile">
+              <option value="Filtre à air + Filtre habitacle">
+              <option value="Filtre à gasoil">
+              <option value="Plaquettes de frein avant">
+              <option value="Disques et plaquettes avant">
+              <option value="Plaquettes de frein arrière">
+              <option value="Kit distribution + Pompe à eau">
+              <option value="Pneus avant (x2)">
+              <option value="Pneus arrière (x2)">
+              <option value="Contrôle technique">
+              <option value="Recharge climatisation">
+              <option value="Batterie 12V">
+            </datalist>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="service-date">Date *</label>
+              <input type="date" id="service-date" required />
+            </div>
+
+            <div class="form-group">
+              <label for="service-km">Kilométrage (km) *</label>
+              <input
+                type="number"
+                id="service-km"
+                min="0"
+                max="999999"
+                step="1"
+                placeholder="Ex: 165000"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="service-notes">Notes / Détails (optionnel)</label>
+            <input
+              type="text"
+              id="service-notes"
+              placeholder="Ex: Huile 5W30 C3, Bosch, Facture n°..."
+            />
+          </div>
+
+          <div class="quick-tags">
+            <span class="quick-label">Raccourcis :</span>
+            <button type="button" class="tag-btn" data-val="Vidange + Filtre à huile">Vidange</button>
+            <button type="button" class="tag-btn" data-val="Freins (Disques/Plaquettes)">Freins</button>
+            <button type="button" class="tag-btn" data-val="Filtres (Air / Habitacle / Gasoil)">Filtres</button>
+            <button type="button" class="tag-btn" data-val="Pneus">Pneus</button>
+            <button type="button" class="tag-btn" data-val="Contrôle Technique">CT</button>
+          </div>
+
+          <button type="submit" class="btn btn-save">
+            ✅ Enregistrer l'entretien
+          </button>
+        </form>
+      </section>
+
+      <section class="card list-section">
+        <div class="card-header">
+          <h2>📋 Historique des Entretiens</h2>
+          <div class="list-controls">
+            <input
+              type="text"
+              id="search-input"
+              class="search-box"
+              placeholder="🔍 Rechercher un entretien..."
+            />
+            <button id="btn-clear-all" class="btn btn-danger-outline" title="Tout effacer">
+              🗑️ Tout vider
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table id="maintenance-table">
+            <thead>
+              <tr>
+                <th style="width: 15%;">Date</th>
+                <th style="width: 17%;">Kilométrage</th>
+                <th style="width: 34%;">Entretien effectué</th>
+                <th style="width: 24%;">Détails / Notes</th>
+                <th style="width: 10%; text-align: center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="maintenance-tbody"></tbody>
+          </table>
+
+          <div id="empty-state" class="empty-state">
+            <div class="empty-icon">🔧</div>
+            <p>Aucun entretien enregistré pour le moment.</p>
+            <span>Ajoutez une intervention à gauche pour démarrer le suivi.</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast">Action effectuée</div>
+  <script src="app.js"></script>
+</body>
+</html> 
