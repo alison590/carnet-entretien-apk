@@ -41,10 +41,14 @@ jobs:
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          ls -la
+          npm install
 
       - name: Setup and sync Capacitor Android
         run: |
+          cd "$GITHUB_WORKSPACE"
           if [ ! -d "android" ]; then
             npx cap add android
           fi
@@ -52,13 +56,8 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          cd android
+          cd "$GITHUB_WORKSPACE/android"
           chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: autotrack-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          
