@@ -2,173 +2,750 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=1280, initial-scale=1.0" />
-  <title>Carnet d'Entretien — Kia Cee'd SW CRDi</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AutoTrack — Carnet d'Entretien</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-soft: rgba(59, 130, 246, 0.16);
+      --bg-app: #0b0f19;
+      --bg-card: #141a29;
+      --bg-input: #1c2438;
+      --border: #26314a;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg-app); color: var(--text-main); min-height: 100vh; padding-bottom: 90px; }
+
+    /* Mode Autoradio (Paysage grands boutons) */
+    body.radio-mode { font-size: 18px; padding-bottom: 24px; }
+    body.radio-mode .container { max-width: 1200px; display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
+    body.radio-mode .bottom-nav { position: static; flex-direction: column; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); padding: 12px; }
+    body.radio-mode .nav-btn { flex-direction: row; justify-content: flex-start; padding: 18px 20px; font-size: 17px; gap: 14px; border-radius: 12px; }
+    body.radio-mode .btn { min-height: 58px; font-size: 17px; }
+    body.radio-mode input, body.radio-mode select { min-height: 54px; font-size: 17px; }
+
+    .topbar {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      gap: 10px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; letter-spacing: 0.3px; }
+    .brand span { color: var(--primary); }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+
+    .icon-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+    .icon-btn:hover { border-color: var(--primary); }
+
+    .color-palette {
+      display: none;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 18px;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .color-palette.open { display: flex; }
+    .swatch {
+      width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: transform 0.15s;
+    }
+    .swatch.active { border-color: #fff; transform: scale(1.12); }
+
+    .container { max-width: 680px; margin: 0 auto; padding: 16px; }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+    .card-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+
+    .vehicle-banner {
+      background: linear-gradient(135deg, var(--primary-soft), var(--bg-card));
+      border: 1px solid var(--primary);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .v-name { font-size: 20px; font-weight: 800; }
+    .v-specs { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .km-box {
+      background: var(--bg-app);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 12px;
+      text-align: right;
+      cursor: pointer;
+    }
+    .km-val { font-size: 20px; font-weight: 800; color: var(--primary); }
+    .km-hint { font-size: 11px; color: var(--text-muted); }
+
+    .alert-item {
+      background: var(--bg-input);
+      border-left: 5px solid var(--ok);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .alert-item.warn { border-left-color: var(--warn); }
+    .alert-item.danger { border-left-color: var(--danger); }
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge.ok { background: rgba(16, 185, 129, 0.18); color: var(--ok); }
+    .badge.warn { background: rgba(245, 158, 11, 0.18); color: var(--warn); }
+    .badge.danger { background: rgba(239, 68, 68, 0.18); color: var(--danger); }
+
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+    input, select {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: var(--primary); }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    @media (max-width: 500px) { .row-3 { grid-template-columns: 1fr; } }
+
+    .filters-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .check-item { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+    .check-item input { width: 18px; height: 18px; accent-color: var(--primary); }
+
+    .btn {
+      width: 100%;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn:hover { filter: brightness(1.1); }
+    .btn-secondary { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-main); }
+    .btn-sm { padding: 7px 11px; font-size: 12px; border-radius: 8px; width: auto; }
+    .btn-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); }
+
+    .hist-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .hist-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .hist-title { font-weight: 700; font-size: 15px; }
+    .hist-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .hist-note { font-size: 13px; color: #cbd5e1; margin-top: 8px; background: var(--bg-card); padding: 8px 10px; border-radius: 8px; }
+    .hist-actions { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 6px;
+      z-index: 60;
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 10px;
+    }
+    .nav-btn.active { color: var(--primary); background: var(--primary-soft); }
+
+    .view { display: none; }
+    .view.active { display: block; }
+  </style>
 </head>
 <body>
-  <div class="app-wrapper">
-    <header class="topbar">
-      <div class="brand">
-        <div class="car-badge">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
-            <circle cx="7" cy="17" r="2"/>
-            <path d="M9 17h6"/>
-            <circle cx="17" cy="17" r="2"/>
-          </svg>
-        </div>
-        <div>
-          <h1>CARNET D'ENTRETIEN</h1>
-          <span class="subtitle">Kia Cee'd CRDi Break • Suivi Numérique</span>
-        </div>
-      </div>
 
-      <div class="stats-bar">
-        <div class="stat-pill">
-          <span class="stat-label">Dernier Kilométrage</span>
-          <span class="stat-value" id="stat-km">— km</span>
-        </div>
-        <div class="stat-pill">
-          <span class="stat-label">Interventions</span>
-          <span class="stat-value" id="stat-count">0</span>
-        </div>
-        <div class="stat-pill">
-          <span class="stat-label">Dernier Entretien</span>
-          <span class="stat-value" id="stat-last-date">—</span>
-        </div>
-      </div>
+  <header class="topbar">
+    <div class="brand">🔧 Auto<span>Track</span></div>
+    <div class="top-actions">
+      <button class="icon-btn" onclick="toggleRadioMode()" id="radioBtn">📻 Autoradio</button>
+      <button class="icon-btn" onclick="togglePalette()">🎨 Couleur</button>
+    </div>
+  </header>
 
-      <div class="header-actions">
-        <button id="btn-export-json" class="btn btn-secondary" title="Sauvegarder une copie JSON">
-          💾 Sauvegarde
-        </button>
-        <button id="btn-export-pdf" class="btn btn-primary">
-          📄 Exporter PDF
-        </button>
-      </div>
-    </header>
+  <div class="color-palette" id="colorPalette">
+    <span style="font-size:13px;color:var(--text-muted);font-weight:600;">Couleur :</span>
+    <div class="swatch active" style="background:#3b82f6" onclick="setTheme('#3b82f6', 'rgba(59,130,246,0.16)', this)"></div>
+    <div class="swatch" style="background:#ef4444" onclick="setTheme('#ef4444', 'rgba(239,68,68,0.16)', this)"></div>
+    <div class="swatch" style="background:#f97316" onclick="setTheme('#f97316', 'rgba(249,115,22,0.16)', this)"></div>
+    <div class="swatch" style="background:#10b981" onclick="setTheme('#10b981', 'rgba(16,185,129,0.16)', this)"></div>
+    <div class="swatch" style="background:#a855f7" onclick="setTheme('#a855f7', 'rgba(168,85,247,0.16)', this)"></div>
+    <div class="swatch" style="background:#eab308" onclick="setTheme('#eab308', 'rgba(234,179,8,0.16)', this)"></div>
+  </div>
 
-    <main class="main-grid">
-      <section class="card form-section">
-        <div class="card-header">
-          <h2>➕ Nouvel Entretien</h2>
-          <span class="badge-auto">Enregistrement local</span>
-        </div>
+  <div class="container">
+    <nav class="bottom-nav" id="mainNav">
+      <button class="nav-btn active" onclick="switchView('dashboard', this)">📊 Tableau de bord</button>
+      <button class="nav-btn" onclick="switchView('add', this)">➕ Ajouter</button>
+      <button class="nav-btn" onclick="switchView('history', this)">📋 Historique</button>
+      <button class="nav-btn" onclick="switchView('car', this)">🚗 Ma Voiture</button>
+    </nav>
 
-        <form id="maintenance-form" autocomplete="off">
-          <div class="form-group">
-            <label for="service-name">Nom de l'entretien *</label>
-            <input
-              type="text"
-              id="service-name"
-              placeholder="Ex: Vidange huile + filtre, Plaquettes avant..."
-              list="preset-services"
-              required
-            />
-            <datalist id="preset-services">
-              <option value="Vidange moteur + Filtre à huile">
-              <option value="Filtre à air + Filtre habitacle">
-              <option value="Filtre à gasoil">
-              <option value="Plaquettes de frein avant">
-              <option value="Disques et plaquettes avant">
-              <option value="Plaquettes de frein arrière">
-              <option value="Kit distribution + Pompe à eau">
-              <option value="Pneus avant (x2)">
-              <option value="Pneus arrière (x2)">
-              <option value="Contrôle technique">
-              <option value="Recharge climatisation">
-              <option value="Batterie 12V">
-            </datalist>
+    <main>
+      <!-- VUE 1 : TABLEAU DE BORD -->
+      <section id="view-dashboard" class="view active">
+        <div class="vehicle-banner">
+          <div>
+            <div class="v-name" id="dashCarName">Configurer ma voiture</div>
+            <div class="v-specs" id="dashCarSpecs">Cliquez sur « Ma Voiture » pour démarrer</div>
           </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="service-date">Date *</label>
-              <input type="date" id="service-date" required />
-            </div>
-
-            <div class="form-group">
-              <label for="service-km">Kilométrage (km) *</label>
-              <input
-                type="number"
-                id="service-km"
-                min="0"
-                max="999999"
-                step="1"
-                placeholder="Ex: 165000"
-                required
-              />
-            </div>
+          <div class="km-box" onclick="promptKm()">
+            <div class="km-val" id="dashKm">0 km</div>
+            <div class="km-hint">✏️ Modifier le km</div>
           </div>
+        </div>
 
-          <div class="form-group">
-            <label for="service-notes">Notes / Détails (optionnel)</label>
-            <input
-              type="text"
-              id="service-notes"
-              placeholder="Ex: Huile 5W30 C3, Bosch, Facture n°..."
-            />
+        <div class="card">
+          <div class="card-title">
+            <span>🔔 Alertes & Prochains entretiens</span>
+            <span style="font-size:13px;color:var(--primary);" id="totalCostBadge">Total : 0 €</span>
           </div>
-
-          <div class="quick-tags">
-            <span class="quick-label">Raccourcis :</span>
-            <button type="button" class="tag-btn" data-val="Vidange + Filtre à huile">Vidange</button>
-            <button type="button" class="tag-btn" data-val="Freins (Disques/Plaquettes)">Freins</button>
-            <button type="button" class="tag-btn" data-val="Filtres (Air / Habitacle / Gasoil)">Filtres</button>
-            <button type="button" class="tag-btn" data-val="Pneus">Pneus</button>
-            <button type="button" class="tag-btn" data-val="Contrôle Technique">CT</button>
-          </div>
-
-          <button type="submit" class="btn btn-save">
-            ✅ Enregistrer l'entretien
-          </button>
-        </form>
+          <div id="alertsContainer"></div>
+        </div>
       </section>
 
-      <section class="card list-section">
-        <div class="card-header">
-          <h2>📋 Historique des Entretiens</h2>
-          <div class="list-controls">
-            <input
-              type="text"
-              id="search-input"
-              class="search-box"
-              placeholder="🔍 Rechercher un entretien..."
-            />
-            <button id="btn-clear-all" class="btn btn-danger-outline" title="Tout effacer">
-              🗑️ Tout vider
-            </button>
+      <!-- VUE 2 : AJOUTER / MODIFIER UN ENTRETIEN -->
+      <section id="view-add" class="view">
+        <div class="card">
+          <div class="card-title" id="formTitle">➕ Nouvel entretien</div>
+          <input type="hidden" id="editId" value="" />
+
+          <div class="form-group">
+            <label>Type d'entretien</label>
+            <select id="serviceType" onchange="onServiceTypeChange()">
+              <option value="Vidange moteur complète">Vidange moteur complète (Huile + Filtres)</option>
+              <option value="Plaquettes de frein AV">Plaquettes de frein Avant</option>
+              <option value="Plaquettes de frein AR">Plaquettes de frein Arrière</option>
+              <option value="Disques + Plaquettes AV">Disques + Plaquettes Avant</option>
+              <option value="Disques + Plaquettes AR">Disques + Plaquettes Arrière</option>
+              <option value="Liquide de frein">Liquide de frein</option>
+              <option value="Pneus Avant">Pneus Avant</option>
+              <option value="Pneus Arrière">Pneus Arrière</option>
+              <option value="Kit Distribution">Kit Distribution + Pompe à eau</option>
+              <option value="Bougies">Bougies (allumage / préchauffage)</option>
+              <option value="Batterie">Batterie</option>
+              <option value="Liquide de refroidissement">Liquide de refroidissement</option>
+              <option value="Contrôle Technique">Contrôle Technique</option>
+              <option value="Autre">Autre (écriture libre ci-dessous)</option>
+            </select>
+          </div>
+
+          <!-- Cases cochées par défaut pour la vidange -->
+          <div id="oilFiltersSection">
+            <label>Éléments inclus dans la vidange :</label>
+            <div class="filters-box">
+              <label class="check-item"><input type="checkbox" id="chkOil" checked /> Huile moteur</label>
+              <label class="check-item"><input type="checkbox" id="chkOilFilter" checked /> Filtre à huile</label>
+              <label class="check-item"><input type="checkbox" id="chkAirFilter" checked /> Filtre à air</label>
+              <label class="check-item"><input type="checkbox" id="chkCabinFilter" checked /> Filtre habitacle</label>
+              <label class="check-item" id="fuelFilterWrap"><input type="checkbox" id="chkFuelFilter" /> Filtre carburant</label>
+            </div>
+          </div>
+
+          <div class="row-3">
+            <div class="form-group">
+              <label>Kilométrage (km)</label>
+              <input type="number" id="entryKm" placeholder="Ex: 125000" />
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="entryDate" />
+            </div>
+            <div class="form-group">
+              <label>Coût (€)</label>
+              <input type="number" step="0.01" id="entryCost" placeholder="Ex: 85" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Écriture libre (intitulé personnalisé, référence huile/pièces, garage...)</label>
+            <input type="text" id="entryNote" placeholder="Ex: Huile 5W30 Castrol + bouchon neuf..." />
+          </div>
+
+          <div style="display:flex;gap:10px;">
+            <button class="btn" onclick="saveEntry()">💾 Enregistrer l'entretien</button>
+            <button class="btn btn-secondary" id="cancelEditBtn" style="display:none;width:auto;" onclick="resetForm()">Annuler</button>
           </div>
         </div>
+      </section>
 
-        <div class="table-container">
-          <table id="maintenance-table">
-            <thead>
-              <tr>
-                <th style="width: 15%;">Date</th>
-                <th style="width: 17%;">Kilométrage</th>
-                <th style="width: 34%;">Entretien effectué</th>
-                <th style="width: 24%;">Détails / Notes</th>
-                <th style="width: 10%; text-align: center;">Action</th>
-              </tr>
-            </thead>
-            <tbody id="maintenance-tbody"></tbody>
-          </table>
-
-          <div id="empty-state" class="empty-state">
-            <div class="empty-icon">🔧</div>
-            <p>Aucun entretien enregistré pour le moment.</p>
-            <span>Ajoutez une intervention à gauche pour démarrer le suivi.</span>
+      <!-- VUE 3 : HISTORIQUE & EXPORT PDF -->
+      <section id="view-history" class="view">
+        <div class="card">
+          <div class="card-title">
+            <span>📋 Historique des entretiens</span>
+            <button class="btn btn-sm" onclick="exportPDF()">📄 Exporter en PDF</button>
           </div>
+          <div id="historyList"></div>
+        </div>
+      </section>
+
+      <!-- VUE 4 : MA VOITURE (CONFIGURATION UNIQUE) -->
+      <section id="view-car" class="view">
+        <div class="card">
+          <div class="card-title">🚗 Configuration de ma voiture (1 véhicule)</div>
+          <div class="form-group">
+            <label>Marque / Modèle</label>
+            <input type="text" id="carModel" placeholder="Ex: BMW 118i ou Peugeot 308" />
+          </div>
+          <div class="row-2">
+            <div class="form-group">
+              <label>Année</label>
+              <input type="number" id="carYear" placeholder="Ex: 2016" />
+            </div>
+            <div class="form-group">
+              <label>Kilométrage actuel</label>
+              <input type="number" id="carKm" placeholder="Ex: 120000" />
+            </div>
+          </div>
+          <div class="row-2">
+            <div class="form-group">
+              <label>Carburant</label>
+              <select id="carFuel">
+                <option value="Essence">Essence</option>
+                <option value="Diesel">Diesel</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Transmission</label>
+              <select id="carTrans">
+                <option value="Manuelle">Manuelle</option>
+                <option value="Automatique">Automatique</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn" onclick="saveCar()">✅ Enregistrer mon véhicule</button>
         </div>
       </section>
     </main>
   </div>
 
-  <div id="toast" class="toast">Action effectuée</div>
-  <script src="app.js"></script>
+  <!-- ZONE CACHÉE POUR GENERATION PDF PROPRE -->
+  <div id="pdfTemplate" style="display:none;background:#fff;color:#111;padding:24px;font-family:Arial,sans-serif;"></div>
+
+  <script>
+    const INTERVALS = {
+      "Vidange moteur complète": { km: 15000, months: 12 },
+      "Plaquettes de frein AV": { km: 35000, months: 36 },
+      "Plaquettes de frein AR": { km: 45000, months: 48 },
+      "Disques + Plaquettes AV": { km: 70000, months: 60 },
+      "Disques + Plaquettes AR": { km: 80000, months: 60 },
+      "Liquide de frein": { km: 40000, months: 24 },
+      "Pneus Avant": { km: 35000, months: 36 },
+      "Pneus Arrière": { km: 45000, months: 48 },
+      "Kit Distribution": { km: 120000, months: 72 },
+      "Bougies": { km: 50000, months: 48 },
+      "Batterie": { km: 80000, months: 60 },
+      "Liquide de refroidissement": { km: 80000, months: 48 },
+      "Contrôle Technique": { km: null, months: 24 }
+    };
+
+    let state = JSON.parse(localStorage.getItem("autotrack_v1")) || {
+      car: { model: "", year: "", fuel: "Essence", trans: "Manuelle", km: 0 },
+      entries: [],
+      theme: { color: "#3b82f6", soft: "rgba(59,130,246,0.16)" },
+      radioMode: false
+    };
+
+    function persist() {
+      localStorage.setItem("autotrack_v1", JSON.stringify(state));
+    }
+
+    function applySavedSettings() {
+      document.documentElement.style.setProperty("--primary", state.theme.color);
+      document.documentElement.style.setProperty("--primary-soft", state.theme.soft);
+      if (state.radioMode) {
+        document.body.classList.add("radio-mode");
+        document.getElementById("radioBtn").textContent = "📱 Téléphone";
+      }
+      document.getElementById("carModel").value = state.car.model || "";
+      document.getElementById("carYear").value = state.car.year || "";
+      document.getElementById("carFuel").value = state.car.fuel || "Essence";
+      document.getElementById("carTrans").value = state.car.trans || "Manuelle";
+      document.getElementById("carKm").value = state.car.km || "";
+      resetForm();
+      renderAll();
+      if (!state.car.model) {
+        switchView("car", document.querySelectorAll(".nav-btn")[3]);
+      }
+    }
+
+    function togglePalette() {
+      document.getElementById("colorPalette").classList.toggle("open");
+    }
+
+    function setTheme(color, soft, el) {
+      state.theme = { color, soft };
+      document.documentElement.style.setProperty("--primary", color);
+      document.documentElement.style.setProperty("--primary-soft", soft);
+      document.querySelectorAll(".swatch").forEach(s => s.classList.remove("active"));
+      if (el) el.classList.add("active");
+      persist();
+    }
+
+    function toggleRadioMode() {
+      state.radioMode = !state.radioMode;
+      document.body.classList.toggle("radio-mode", state.radioMode);
+      document.getElementById("radioBtn").textContent = state.radioMode ? "📱 Téléphone" : "📻 Autoradio";
+      persist();
+    }
+
+    function switchView(viewName, btn) {
+      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+      document.getElementById("view-" + viewName).classList.add("active");
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+      if (viewName === "add" && !document.getElementById("editId").value) {
+        document.getElementById("entryKm").value = state.car.km || "";
+        document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
+      }
+    }
+
+    function saveCar() {
+      const model = document.getElementById("carModel").value.trim();
+      const year = document.getElementById("carYear").value.trim();
+      const fuel = document.getElementById("carFuel").value;
+      const trans = document.getElementById("carTrans").value;
+      const km = parseInt(document.getElementById("carKm").value) || 0;
+
+      if (!model) { alert("Merci d'indiquer la marque et le modèle."); return; }
+      state.car = { model, year, fuel, trans, km };
+      persist();
+      renderAll();
+      switchView("dashboard", document.querySelectorAll(".nav-btn")[0]);
+    }
+
+    function promptKm() {
+      const val = prompt("Nouveau kilométrage actuel (km) :", state.car.km);
+      if (val !== null && !isNaN(parseInt(val))) {
+        state.car.km = parseInt(val);
+        document.getElementById("carKm").value = state.car.km;
+        persist();
+        renderAll();
+      }
+    }
+
+    function onServiceTypeChange() {
+      const type = document.getElementById("serviceType").value;
+      const isOil = type === "Vidange moteur complète";
+      document.getElementById("oilFiltersSection").style.display = isOil ? "block" : "none";
+      const fuelWrap = document.getElementById("fuelFilterWrap");
+      if (state.car.fuel === "Diesel") {
+        fuelWrap.style.display = "flex";
+        document.getElementById("chkFuelFilter").checked = true;
+      } else {
+        fuelWrap.style.display = "flex";
+        document.getElementById("chkFuelFilter").checked = false;
+      }
+    }
+
+    function resetForm() {
+      document.getElementById("editId").value = "";
+      document.getElementById("formTitle").textContent = "➕ Nouvel entretien";
+      document.getElementById("serviceType").value = "Vidange moteur complète";
+      document.getElementById("chkOil").checked = true;
+      document.getElementById("chkOilFilter").checked = true;
+      document.getElementById("chkAirFilter").checked = true;
+      document.getElementById("chkCabinFilter").checked = true;
+      document.getElementById("entryKm").value = state.car.km || "";
+      document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
+      document.getElementById("entryCost").value = "";
+      document.getElementById("entryNote").value = "";
+      document.getElementById("cancelEditBtn").style.display = "none";
+      onServiceTypeChange();
+    }
+
+    function saveEntry() {
+      const editId = document.getElementById("editId").value;
+      const type = document.getElementById("serviceType").value;
+      const km = parseInt(document.getElementById("entryKm").value) || 0;
+      const date = document.getElementById("entryDate").value || new Date().toISOString().split("T")[0];
+      const cost = parseFloat(document.getElementById("entryCost").value) || 0;
+      const note = document.getElementById("entryNote").value.trim();
+
+      let details = [];
+      if (type === "Vidange moteur complète") {
+        if (document.getElementById("chkOil").checked) details.push("Huile moteur");
+        if (document.getElementById("chkOilFilter").checked) details.push("Filtre huile");
+        if (document.getElementById("chkAirFilter").checked) details.push("Filtre air");
+        if (document.getElementById("chkCabinFilter").checked) details.push("Filtre habitacle");
+        if (document.getElementById("chkFuelFilter").checked) details.push("Filtre carburant");
+      }
+
+      if (km > state.car.km) {
+        state.car.km = km;
+        document.getElementById("carKm").value = km;
+      }
+
+      if (editId) {
+        const idx = state.entries.findIndex(e => e.id === editId);
+        if (idx !== -1) {
+          state.entries[idx] = { id: editId, type, km, date, cost, note, details };
+        }
+      } else {
+        state.entries.unshift({
+          id: Date.now().toString(),
+          type, km, date, cost, note, details
+        });
+      }
+
+      persist();
+      resetForm();
+      renderAll();
+      switchView("dashboard", document.querySelectorAll(".nav-btn")[0]);
+    }
+
+    function editEntry(id) {
+      const item = state.entries.find(e => e.id === id);
+      if (!item) return;
+      switchView("add", document.querySelectorAll(".nav-btn")[1]);
+      document.getElementById("editId").value = item.id;
+      document.getElementById("formTitle").textContent = "✏️ Modifier l'entretien";
+      document.getElementById("serviceType").value = item.type;
+      onServiceTypeChange();
+
+      if (item.type === "Vidange moteur complète" && item.details) {
+        document.getElementById("chkOil").checked = item.details.includes("Huile moteur");
+        document.getElementById("chkOilFilter").checked = item.details.includes("Filtre huile");
+        document.getElementById("chkAirFilter").checked = item.details.includes("Filtre air");
+        document.getElementById("chkCabinFilter").checked = item.details.includes("Filtre habitacle");
+        document.getElementById("chkFuelFilter").checked = item.details.includes("Filtre carburant");
+      }
+
+      document.getElementById("entryKm").value = item.km;
+      document.getElementById("entryDate").value = item.date;
+      document.getElementById("entryCost").value = item.cost;
+      document.getElementById("entryNote").value = item.note || "";
+      document.getElementById("cancelEditBtn").style.display = "block";
+    }
+
+    function deleteEntry(id) {
+      if (!confirm("Supprimer cet entretien de l'historique ?")) return;
+      state.entries = state.entries.filter(e => e.id !== id);
+      persist();
+      renderAll();
+    }
+
+    function renderAll() {
+      // Bannière véhicule
+      document.getElementById("dashCarName").textContent = state.car.model || "Configurer ma voiture";
+      document.getElementById("dashCarSpecs").textContent = state.car.model
+        ? `${state.car.year || "—"} • ${state.car.fuel} • Boîte ${state.car.trans}`
+        : "Allez dans « Ma Voiture » pour saisir votre modèle";
+      document.getElementById("dashKm").textContent = `${(state.car.km || 0).toLocaleString("fr-FR")} km`;
+
+      const totalCost = state.entries.reduce((sum, e) => sum + (e.cost || 0), 0);
+      document.getElementById("totalCostBadge").textContent = `Total : ${totalCost.toFixed(2)} €`;
+
+      // Alertes par catégorie suivie
+      const alertsEl = document.getElementById("alertsContainer");
+      alertsEl.innerHTML = "";
+      const latestByType = {};
+      [...state.entries].sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(e => {
+        if (!latestByType[e.type]) latestByType[e.type] = e;
+      });
+
+      const trackedTypes = Object.keys(latestByType);
+      if (trackedTypes.length === 0) {
+        alertsEl.innerHTML = `<p style="color:var(--text-muted);font-size:14px;">Aucun entretien enregistré. Cliquez sur <strong>➕ Ajouter</strong> pour enregistrer votre dernière vidange ou contrôle technique.</p>`;
+      } else {
+        trackedTypes.forEach(type => {
+          const last = latestByType[type];
+          const rule = INTERVALS[type];
+          let status = "ok";
+          let statusLabel = "À jour";
+          let subText = `Fait le ${formatDate(last.date)} à ${last.km.toLocaleString("fr-FR")} km`;
+
+          if (rule) {
+            let kmLeft = rule.km ? (last.km + rule.km) - state.car.km : null;
+            const nextDate = new Date(last.date);
+            nextDate.setMonth(nextDate.getMonth() + rule.months);
+            const daysLeft = Math.ceil((nextDate - new Date()) / (1000 * 60 * 60 * 24));
+
+            if ((kmLeft !== null && kmLeft <= 0) || daysLeft <= 0) {
+              status = "danger";
+              statusLabel = "À faire maintenant";
+            } else if ((kmLeft !== null && kmLeft <= 1500) || daysLeft <= 30) {
+              status = "warn";
+              statusLabel = "Bientôt";
+            }
+
+            const parts = [];
+            if (kmLeft !== null) parts.push(kmLeft > 0 ? `Reste ${kmLeft.toLocaleString("fr-FR")} km` : `Dépassé de ${Math.abs(kmLeft).toLocaleString("fr-FR")} km`);
+            parts.push(daysLeft > 0 ? `Reste ${daysLeft} j` : `Dépassé de ${Math.abs(daysLeft)} j`);
+            subText += ` • ${parts.join(" / ")}`;
+          }
+
+          alertsEl.innerHTML += `
+            <div class="alert-item ${status}">
+              <div>
+                <div style="font-weight:700;font-size:15px;">${type === "Autre" && last.note ? last.note : type}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">${subText}</div>
+              </div>
+              <span class="badge ${status}">${statusLabel}</span>
+            </div>
+          `;
+        });
+      }
+
+      // Historique
+      const histEl = document.getElementById("historyList");
+      histEl.innerHTML = "";
+      if (state.entries.length === 0) {
+        histEl.innerHTML = `<p style="color:var(--text-muted);font-size:14px;">L'historique est vide.</p>`;
+      } else {
+        state.entries.forEach(e => {
+          const titleDisplay = e.type === "Autre" && e.note ? e.note : e.type;
+          const detailsStr = e.details && e.details.length ? `<div style="font-size:12px;color:var(--primary);margin-top:4px;">✔ ${e.details.join(" • ")}</div>` : "";
+          const noteStr = e.note && e.type !== "Autre" ? `<div class="hist-note">📝 ${e.note}</div>` : "";
+          histEl.innerHTML += `
+            <div class="hist-card">
+              <div class="hist-top">
+                <div>
+                  <div class="hist-title">${titleDisplay}</div>
+                  <div class="hist-meta">📅 ${formatDate(e.date)} • 🛣️ ${e.km.toLocaleString("fr-FR")} km</div>
+                  ${detailsStr}
+                </div>
+                <div style="font-weight:800;color:var(--primary);font-size:16px;">${(e.cost || 0).toFixed(2)} €</div>
+              </div>
+              ${noteStr}
+              <div class="hist-actions">
+                <button class="btn btn-secondary btn-sm" onclick="editEntry('${e.id}')">✏️ Modifier</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteEntry('${e.id}')">🗑️ Supprimer</button>
+              </div>
+            </div>
+          `;
+        });
+      }
+    }
+
+    function formatDate(d) {
+      if (!d) return "—";
+      const [y, m, day] = d.split("-");
+      return `${day}/${m}/${y}`;
+    }
+
+    function exportPDF() {
+      const total = state.entries.reduce((s, e) => s + (e.cost || 0), 0);
+      const rows = state.entries.map(e => `
+        <tr>
+          <td style="padding:8px;border:1px solid #ddd;">${formatDate(e.date)}</td>
+          <td style="padding:8px;border:1px solid #ddd;">${e.km.toLocaleString("fr-FR")} km</td>
+          <td style="padding:8px;border:1px solid #ddd;"><strong>${e.type}</strong>${e.details && e.details.length ? "<br><small>" + e.details.join(", ") + "</small>" : ""}${e.note ? "<br><em>" + e.note + "</em>" : ""}</td>
+          <td style="padding:8px;border:1px solid #ddd;text-align:right;">${(e.cost || 0).toFixed(2)} €</td>
+        </tr>
+      `).join("");
+
+      const tpl = document.getElementById("pdfTemplate");
+      tpl.style.display = "block";
+      tpl.innerHTML = `
+        <h1 style="margin:0 0 6px 0;color:#1e293b;">Carnet d'Entretien Véhicule</h1>
+        <p style="margin:0 0 16px 0;color:#475569;">
+          <strong>Véhicule :</strong> ${state.car.model || "Non renseigné"} (${state.car.year || "—"}) — ${state.car.fuel} — Boîte ${state.car.trans}<br>
+          <strong>Kilométrage actuel :</strong> ${(state.car.km || 0).toLocaleString("fr-FR")} km • <strong>Total dépenses :</strong> ${total.toFixed(2)} €
+        </p>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th style="padding:8px;border:1px solid #ddd;text-align:left;">Date</th>
+              <th style="padding:8px;border:1px solid #ddd;text-align:left;">Kilométrage</th>
+              <th style="padding:8px;border:1px solid #ddd;text-align:left;">Intervention & Détails</th>
+              <th style="padding:8px;border:1px solid #ddd;text-align:right;">Coût</th>
+            </tr>
+          </thead>
+          <tbody>${rows || '<tr><td colspan="4" style="padding:10px;text-align:center;">Aucun entretien enregistré</td></tr>'}</tbody>
+        </table>
+      `;
+
+      html2pdf().set({
+        margin: 10,
+        filename: `Carnet_Entretien_${(state.car.model || "Vehicule").replace(/\s+/g, "_")}.pdf`,
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+      }).from(tpl).save().then(() => {
+        tpl.style.display = "none";
+      });
+    }
+
+    applySavedSettings();
+  </script>
 </body>
-</html> 
+</html>
