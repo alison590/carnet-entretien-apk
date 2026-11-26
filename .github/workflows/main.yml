@@ -26,16 +26,26 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platform-tools
+            platforms;android-34
+            build-tools;34.0.0
+
+      - name: Accept Android SDK licenses
+        run: |
+          yes | sdkmanager --licenses || true
+          yes | "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
       - name: Install dependencies
         run: npm install
 
-      - name: Add Android platform if missing
+      - name: Setup and sync Capacitor Android
         run: |
           if [ ! -d "android" ]; then
             npx cap add android
           fi
-          npx cap copy android
+          npx cap sync android
 
       - name: Build Debug APK
         run: |
@@ -46,5 +56,6 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: carnet-entretien-apk
+          name: autotrack-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          
