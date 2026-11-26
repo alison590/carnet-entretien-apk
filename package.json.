@@ -1,5 +1,5 @@
 {
-  "name": "carnet-entretien-kia",
+  "name": "autotrack",
   "version": "1.0.0",
   "description": "Application de suivi d'entretien automobile en WebView / Capacitor",
   "scripts": {
@@ -14,4 +14,3 @@
     "@capacitor/cli": "^6.0.0"
   }
 }
- 
