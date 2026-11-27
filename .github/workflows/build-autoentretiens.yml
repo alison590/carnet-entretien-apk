@@ -1,0 +1,30 @@
+name: Build Auto Entretiens APK
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'AutoEntretiens-v*.zip'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decompresser
+        run: unzip -oq "$(ls AutoEntretiens-v*.zip | sort -V | tail -1)"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+      - name: Compiler
+        run: |
+          cd AutoEntretiens
+          gradle assembleDebug --no-daemon
+          mkdir -p ../out
+          cp "$(find . -name '*-debug.apk' | head -1)" ../out/AutoEntretiens.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AutoEntretiens-APK
+          path: out/AutoEntretiens.apk
