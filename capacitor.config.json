@@ -1,6 +1,6 @@
 {
   "appId": "com.carnet.entretien.kia",
-  "appName": "Carnet Entretien",
+  "appName": "Revizo",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
